@@ -1,0 +1,140 @@
+/* MindTap Timer Styles */
+#mindtap-timer {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 200px;
+    background: rgba(30, 41, 59, 0.95);
+    border: 2px solid #f472b6;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    z-index: 2147483647;
+    font-family: 'Poppins', sans-serif;
+    color: white;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+  }
+  
+  #mindtap-timer.mindtap-minimized {
+    width: auto;
+    height: auto;
+    padding: 8px 12px;
+  }
+  
+  #mindtap-timer.hidden {
+    display: none;
+  }
+  
+  .mindtap-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    cursor: move;
+    user-select: none;
+  }
+  
+  .mindtap-time {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  
+  .mindtap-controls {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .mindtap-controls button {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+  
+  .mindtap-controls button:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .mindtap-body {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .mindtap-body.hidden {
+    display: none;
+  }
+  
+  .mindtap-progress {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  
+  .mindtap-progress-bar {
+    height: 100%;
+    background: #f472b6;
+    border-radius: 3px;
+    transition: width 1s linear, background 0.3s;
+  }
+  
+  .mindtap-message {
+    font-size: 14px;
+    text-align: center;
+  }
+  
+  .mindtap-action-btn {
+    background: #f472b6;
+    color: #0f172a;
+    border: none;
+    border-radius: 6px;
+    padding: 8px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .mindtap-action-btn:hover {
+    background: #ec4899;
+    transform: translateY(-1px);
+  }
+  
+  /* Animations */
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  }
+  
+  .pulse {
+    animation: pulse 1.5s infinite;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 600px) {
+    #mindtap-timer {
+      right: 10px !important;
+      left: auto !important;
+      top: 10px !important;
+    }
+    
+    #mindtap-timer.mindtap-minimized {
+      padding: 6px 10px;
+    }
+    
+    .mindtap-time {
+      font-size: 14px;
+    }
+  }

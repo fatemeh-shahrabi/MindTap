@@ -1,0 +1,52 @@
+{
+    "manifest_version": 3,
+    "name": "MindTap",
+    "version": "1.1",
+    "description": "A gentle nudge before diving into distracting sites - now with better UX!",
+    "permissions": ["storage", "tabs", "notifications", "activeTab"],
+    "host_permissions": [
+        "*://www.youtube.com/*",
+        "*://m.youtube.com/*",
+        "*://www.tiktok.com/*",
+        "*://www.instagram.com/*",
+        "*://www.snapchat.com/*",
+        "*://www.tumblr.com/*",
+        "*://www.pinterest.com/*",
+        "*://www.discord.com/*",
+        "*://discord.com/*",
+        "*://web.whatsapp.com/*",
+        "*://www.reddit.com/*",
+        "*://www.twitch.tv/*"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+      "default_popup": "popup/popup.html",
+      "default_icon": {
+        "16": "icons/icon16.png",
+        "48": "icons/icon48.png",
+        "128": "icons/icon128.png"
+      }
+    },
+    "content_scripts": [
+      {
+        "matches": [
+            "*://www.youtube.com/*",
+            "*://m.youtube.com/*",
+            "*://www.tiktok.com/*",
+            "*://www.instagram.com/*",
+            "*://www.snapchat.com/*",
+            "*://www.tumblr.com/*",
+            "*://www.pinterest.com/*",
+            "*://www.discord.com/*",
+            "*://discord.com/*",
+            "*://web.whatsapp.com/*",
+            "*://www.reddit.com/*",
+            "*://www.twitch.tv/*"
+        ],
+        "js": ["content.js"],
+        "css": ["content.css"]
+      }
+    ]
+  }

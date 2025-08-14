@@ -1,4 +1,3 @@
-// Enhanced timer display with better UX
 class MindTapTimer {
     constructor() {
       this.timerElement = null;
@@ -10,20 +9,26 @@ class MindTapTimer {
     }
     
     init() {
+      console.log('MindTapTimer: Initializing for', window.location.hostname);
       this.createTimerElement();
       this.setupEventListeners();
       this.checkTimerStatus();
-      setInterval(() => this.checkTimerStatus(), 2000);
+      setInterval(() => this.checkTimerStatus(), 1000); // Reduced interval for faster updates
     }
     
     createTimerElement() {
-      if (document.getElementById('mindtap-timer')) return;
+      if (document.getElementById('mindtap-timer')) {
+        console.log('MindTapTimer: Timer element already exists');
+        return;
+      }
       
+      console.log('MindTapTimer: Creating timer element');
       this.timerElement = document.createElement('div');
       this.timerElement.id = 'mindtap-timer';
       this.timerElement.className = 'mindtap-minimized';
       this.timerElement.innerHTML = `
         <div class="mindtap-header">
+          <img src="${chrome.runtime.getURL('icons/the main.png')}" alt="MindTap Logo" class="mindtap-logo">
           <span class="mindtap-time">00:00</span>
           <div class="mindtap-controls">
             <button class="mindtap-minimize">−</button>
@@ -31,25 +36,32 @@ class MindTapTimer {
           </div>
         </div>
         <div class="mindtap-body hidden">
-          <div class="mindtap-progress">
-            <div class="mindtap-progress-bar"></div>
+          <div class="timer-circle">
+            <svg viewBox="0 0 100 100">
+              <circle class="progress-ring__circle" stroke="#22c55e" stroke-width="8" fill="white" r="40" cx="50" cy="50"/>
+            </svg>
+            <span class="mindtap-time-display">00:00</span>
           </div>
-          <div class="mindtap-message">Stay focused! You got this 💪</div>
-          <button class="mindtap-action-btn">Extend Time</button>
+          <img src="${chrome.runtime.getURL('icons/stop button.png')}" alt="Pause Button" class="pause-btn">
         </div>
       `;
       
       document.body.appendChild(this.timerElement);
+      console.log('MindTapTimer: Timer element appended to body');
       this.loadPosition();
     }
     
     setupEventListeners() {
-      // Header drag
+      console.log('MindTapTimer: Setting up event listeners');
       const header = this.timerElement.querySelector('.mindtap-header');
       header.addEventListener('mousedown', (e) => {
         if (e.target.classList.contains('mindtap-minimize') || 
-            e.target.classList.contains('mindtap-close')) return;
-            
+            e.target.classList.contains('mindtap-close')) {
+          console.log('MindTapTimer: Clicked on minimize/close button, ignoring drag');
+          return;
+        }
+        
+        console.log('MindTapTimer: Starting drag');
         this.isDragging = true;
         const rect = this.timerElement.getBoundingClientRect();
         this.offsetX = e.clientX - rect.left;
@@ -59,33 +71,38 @@ class MindTapTimer {
       document.addEventListener('mousemove', (e) => {
         if (!this.isDragging) return;
         
+        console.log('MindTapTimer: Dragging to', e.clientX, e.clientY);
         this.timerElement.style.left = `${e.clientX - this.offsetX}px`;
         this.timerElement.style.top = `${e.clientY - this.offsetY}px`;
         this.savePosition();
       });
       
       document.addEventListener('mouseup', () => {
-        this.isDragging = false;
+        if (this.isDragging) {
+          console.log('MindTapTimer: Drag ended');
+          this.isDragging = false;
+        }
       });
       
-      // Minimize button
       this.timerElement.querySelector('.mindtap-minimize').addEventListener('click', () => {
+        console.log('MindTapTimer: Toggling minimize state');
         this.toggleMinimize();
       });
       
-      // Close button
       this.timerElement.querySelector('.mindtap-close').addEventListener('click', () => {
+        console.log('MindTapTimer: Closing timer');
         this.timerElement.remove();
       });
       
-      // Action button
-      const actionBtn = this.timerElement.querySelector('.mindtap-action-btn');
-      if (actionBtn) {
-        actionBtn.addEventListener('click', () => {
+      const pauseBtn = this.timerElement.querySelector('.pause-btn');
+      if (pauseBtn) {
+        pauseBtn.addEventListener('click', () => {
+          console.log('MindTapTimer: Pause button clicked');
           chrome.runtime.sendMessage({
-            action: 'snooze_timer',
+            action: 'stop_timer',
             url: window.location.hostname
           });
+          this.timerElement.remove();
         });
       }
     }
@@ -94,6 +111,7 @@ class MindTapTimer {
       this.isMinimized = !this.isMinimized;
       this.timerElement.classList.toggle('mindtap-minimized', this.isMinimized);
       this.timerElement.querySelector('.mindtap-body').classList.toggle('hidden', this.isMinimized);
+      console.log('MindTapTimer: Minimized state:', this.isMinimized);
       this.savePosition();
     }
     
@@ -105,6 +123,8 @@ class MindTapTimer {
           y: rect.top,
           minimized: this.isMinimized
         }
+      }, () => {
+        console.log('MindTapTimer: Position saved', rect.left, rect.top);
       });
     }
     
@@ -116,87 +136,112 @@ class MindTapTimer {
         this.isMinimized = pos.minimized || false;
         this.timerElement.classList.toggle('mindtap-minimized', this.isMinimized);
         this.timerElement.querySelector('.mindtap-body').classList.toggle('hidden', this.isMinimized);
+        console.log('MindTapTimer: Position loaded', pos.x, pos.y, 'Minimized:', this.isMinimized);
       });
     }
     
     checkTimerStatus() {
-      if (!this.timerElement) return;
+      if (!this.timerElement) {
+        console.log('MindTapTimer: Timer element not found, recreating');
+        this.createTimerElement();
+        this.setupEventListeners();
+      }
       
+      console.log('MindTapTimer: Checking timer status for', window.location.hostname);
       chrome.runtime.sendMessage({
         action: 'check_timer',
         url: window.location.hostname
       }, (response) => {
         if (chrome.runtime.lastError) {
-          console.error('Error checking timer:', chrome.runtime.lastError);
+          console.error('MindTapTimer: Error checking timer:', chrome.runtime.lastError);
           return;
         }
         
+        console.log('MindTapTimer: Timer status response', response);
         if (response.active) {
           this.updateTimerDisplay(response.remaining, response.total);
         } else {
           this.timerElement.classList.add('hidden');
+          console.log('MindTapTimer: No active timer, hiding');
         }
       });
     }
     
     updateTimerDisplay(remainingMs, totalMs) {
       this.timerElement.classList.remove('hidden');
+      console.log('MindTapTimer: Updating display, remaining:', remainingMs, 'total:', totalMs);
       
       const minutes = Math.floor(remainingMs / 60000);
       const seconds = Math.floor((remainingMs % 60000) / 1000);
       const timeText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
       
       this.timerElement.querySelector('.mindtap-time').textContent = timeText;
+      this.timerElement.querySelector('.mindtap-time-display').textContent = timeText;
       
-      // Update progress bar
       const percentage = (remainingMs / totalMs) * 100;
-      this.timerElement.querySelector('.mindtap-progress-bar').style.width = `${percentage}%`;
+      const radius = this.timerElement.querySelector('.progress-ring__circle').r.baseVal.value;
+      const circumference = 2 * Math.PI * radius;
+      const offset = circumference - (percentage / 100) * circumference;
+      this.timerElement.querySelector('.progress-ring__circle').style.strokeDashoffset = offset;
       
-      // Update color based on remaining time
       if (percentage > 50) {
-        this.timerElement.style.borderColor = '#22c55e'; // Green
-        this.timerElement.querySelector('.mindtap-progress-bar').style.backgroundColor = '#22c55e';
+        this.timerElement.querySelector('.progress-ring__circle').style.stroke = '#22c55e';
       } else if (percentage > 20) {
-        this.timerElement.style.borderColor = '#f59e0b'; // Orange
-        this.timerElement.querySelector('.mindtap-progress-bar').style.backgroundColor = '#f59e0b';
+        this.timerElement.querySelector('.progress-ring__circle').style.stroke = '#f59e0b';
       } else {
-        this.timerElement.style.borderColor = '#ef4444'; // Red
-        this.timerElement.querySelector('.mindtap-progress-bar').style.backgroundColor = '#ef4444';
-        
-        // Pulse animation when time is running out
+        this.timerElement.querySelector('.progress-ring__circle').style.stroke = '#ef4444';
         this.timerElement.classList.add('pulse');
       }
     }
+}
+
+window.addEventListener('load', () => {
+  const distractingSites = [
+    'www.youtube.com',
+    'm.youtube.com',
+    'www.tiktok.com',
+    'www.instagram.com',
+    'www.snapchat.com',
+    'www.tumblr.com',
+    'www.pinterest.com',
+    'www.discord.com',
+    'discord.com',
+    'web.whatsapp.com',
+    'www.reddit.com',
+    'www.twitch.tv'
+  ];
+  
+  console.log('MindTapTimer: Checking if', window.location.hostname, 'is a distracting site');
+  if (distractingSites.includes(window.location.hostname)) {
+    console.log('MindTapTimer: Initializing timer for distracting site');
+    new MindTapTimer();
+  } else {
+    console.log('MindTapTimer: Not a distracting site, skipping initialization');
+  }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log('MindTapTimer: Received message', message);
+  if (message.action === 'trigger_popup') {
+    chrome.runtime.sendMessage({
+      action: 'open_popup',
+      url: message.url
+    });
+    sendResponse({ success: true });
   }
   
-  // Initialize when page loads
-  window.addEventListener('load', () => {
-    const distractingSites = [
-      'www.youtube.com',
-      'www.instagram.com',
-      'www.tiktok.com',
-      'www.pinterest.com'
-    ];
-    
-    if (distractingSites.includes(window.location.hostname)) {
-      new MindTapTimer();
-    }
-  });
+  if (message.action === 'timer_updated') {
+    sendResponse({ active: true, remaining: message.remaining, total: message.total });
+  }
   
-  // Handle messages from background
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.action === 'trigger_popup') {
-      chrome.runtime.sendMessage({
-        action: 'open_popup',
-        url: message.url
-      });
-      
-      sendResponse({ success: true });
+  if (message.action === 'stop_timer') {
+    const timerElement = document.getElementById('mindtap-timer');
+    if (timerElement) {
+      timerElement.remove();
+      console.log('MindTapTimer: Timer stopped and removed');
     }
-    
-    if (message.action === 'update_timer') {
-      sendResponse({ active: true, remaining: message.remaining, total: message.total });
-    }
-    
-    return true;
-  });
+    sendResponse({ success: true });
+  }
+  
+  return true;
+});

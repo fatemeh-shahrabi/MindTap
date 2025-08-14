@@ -1,4 +1,3 @@
-// Enhanced background script with better state management
 class MindTapManager {
     constructor() {
       this.activeTimers = {};
@@ -25,9 +24,24 @@ class MindTapManager {
       chrome.tabs.onRemoved.addListener(this.handleTabClosed.bind(this));
       chrome.storage.onChanged.addListener(this.handleStorageChange.bind(this));
       chrome.notifications.onButtonClicked.addListener(this.handleNotificationClick.bind(this));
+      chrome.tabs.onUpdated.addListener(this.handleTabUpdated.bind(this));
+    }
+    
+    handleTabUpdated(tabId, changeInfo, tab) {
+      if (changeInfo.status === 'complete' && tab.url) {
+        const site = new URL(tab.url).hostname;
+        if (this.distractingSites.some(pattern => {
+          const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+          return regex.test(tab.url);
+        })) {
+          console.log('MindTapManager: Detected distracting site, opening popup for', site);
+          this.openPopup(site);
+        }
+      }
     }
     
     handleMessage(message, sender, sendResponse) {
+      console.log('MindTapManager: Received message', message);
       switch (message.action) {
         case 'check_timer':
           this.checkTimerStatus(message.url, sendResponse);
@@ -39,6 +53,11 @@ class MindTapManager {
           
         case 'snooze_timer':
           this.snoozeTimer(message.url);
+          break;
+          
+        case 'stop_timer':
+          this.stopTimer(message.url);
+          sendResponse({ success: true });
           break;
           
         case 'get_points':
@@ -55,12 +74,14 @@ class MindTapManager {
         
         if (siteData.startTime && Date.now() - siteData.startTime <= siteData.mins * 60 * 1000) {
           const remaining = siteData.mins * 60 * 1000 - (Date.now() - siteData.startTime);
+          console.log('MindTapManager: Timer active for', url, 'Remaining:', remaining);
           sendResponse({
             active: true,
             remaining,
             total: siteData.mins * 60 * 1000
           });
         } else {
+          console.log('MindTapManager: No active timer for', url);
           sendResponse({ active: false });
         }
       });
@@ -69,13 +90,19 @@ class MindTapManager {
     openPopup(url) {
       chrome.windows.getLastFocused({ populate: true }, (window) => {
         const tab = window.tabs.find(t => 
-          t.active && this.distractingSites.includes(new URL(t.url).hostname));
+          t.active && this.distractingSites.some(pattern => {
+            const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+            return regex.test(t.url);
+          }));
         
         if (tab) {
+          console.log('MindTapManager: Opening popup for tab', tab.id);
           chrome.windows.update(window.id, { focused: true });
           chrome.tabs.update(tab.id, { active: true }, () => {
             chrome.action.openPopup();
           });
+        } else {
+          console.log('MindTapManager: No matching tab found for', url);
         }
       });
     }
@@ -88,9 +115,9 @@ class MindTapManager {
           mindtapData[url].startTime = Date.now();
           
           chrome.storage.local.set({ mindtap: mindtapData }, () => {
+            console.log('MindTapManager: Snoozed timer for', url);
             this.createOrUpdateTimer(url, mindtapData[url]);
             
-            // Send update to content script
             chrome.tabs.query({ url: `*://${url}/*` }, (tabs) => {
               tabs.forEach(tab => {
                 chrome.tabs.sendMessage(tab.id, {
@@ -106,10 +133,32 @@ class MindTapManager {
       });
     }
     
+    stopTimer(url) {
+      chrome.storage.local.get('mindtap', (data) => {
+        const mindtapData = data.mindtap || {};
+        if (mindtapData[url]) {
+          delete mindtapData[url];
+          chrome.storage.local.set({ mindtap: mindtapData }, () => {
+            console.log('MindTapManager: Timer stopped for', url);
+            this.clearTimer(url);
+            chrome.tabs.query({ url: `*://${url}/*` }, (tabs) => {
+              tabs.forEach(tab => {
+                chrome.tabs.sendMessage(tab.id, {
+                  action: 'stop_timer',
+                  url
+                });
+              });
+            });
+          });
+        }
+      });
+    }
+    
     handleTabClosed(tabId) {
       chrome.tabs.get(tabId, (tab) => {
         if (tab && tab.url) {
           const site = new URL(tab.url).hostname;
+          console.log('MindTapManager: Tab closed, clearing timer for', site);
           this.clearTimer(site);
         }
       });
@@ -120,7 +169,11 @@ class MindTapManager {
         const mindtapData = changes.mindtap.newValue;
         
         for (const [site, siteData] of Object.entries(mindtapData)) {
-          if (this.distractingSites.includes(site) && siteData.startTime) {
+          if (this.distractingSites.some(pattern => {
+            const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+            return regex.test(`http://${site}`);
+          }) && siteData.startTime) {
+            console.log('MindTapManager: Storage changed, updating timer for', site);
             this.createOrUpdateTimer(site, siteData);
           }
         }
@@ -129,24 +182,30 @@ class MindTapManager {
     
     handleNotificationClick(notificationId, buttonIndex) {
       if (buttonIndex === 0) {
-        // Open popup
         chrome.storage.local.get('mindtap', (data) => {
           const mindtapData = data.mindtap || {};
           const site = Object.keys(mindtapData).find(s => 
-            this.distractingSites.includes(s));
+            this.distractingSites.some(pattern => {
+              const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+              return regex.test(`http://${s}`);
+            }));
           
           if (site) {
+            console.log('MindTapManager: Notification clicked, opening popup for', site);
             this.openPopup(site);
           }
         });
       } else if (buttonIndex === 1) {
-        // Snooze
         chrome.storage.local.get('mindtap', (data) => {
           const mindtapData = data.mindtap || {};
           const site = Object.keys(mindtapData).find(s => 
-            this.distractingSites.includes(s));
+            this.distractingSites.some(pattern => {
+              const regex = new RegExp(pattern.replace(/\*/g, '.*'));
+              return regex.test(`http://${s}`);
+            }));
           
           if (site) {
+            console.log('MindTapManager: Notification clicked, snoozing for', site);
             this.snoozeTimer(site);
           }
         });
@@ -154,33 +213,36 @@ class MindTapManager {
     }
     
     createOrUpdateTimer(site, siteData) {
-      // Clear existing timer if any
       this.clearTimer(site);
       
       const remainingTime = siteData.mins * 60 * 1000 - (Date.now() - siteData.startTime);
       
       if (remainingTime <= 0) {
+        console.log('MindTapManager: Timer completed for', site);
         this.triggerTimerCompletion(site, siteData);
         return;
       }
       
-      // Set new timer
+      console.log('MindTapManager: Creating timer for', site, 'Remaining:', remainingTime);
       this.activeTimers[site] = {
         timeout: setTimeout(() => {
           this.triggerTimerCompletion(site, siteData);
         }, remainingTime),
         
         interval: setInterval(() => {
-          const elapsed = (Date.now() - siteData.startTime) / 60000; // in minutes
+          const elapsed = (Date.now() - siteData.startTime) / 60000;
           
-          if (elapsed >= 20 && elapsed < 30 && !this.activeTimers[site].warned20) {
-            this.sendWarningNotification(site, 20);
-            this.activeTimers[site].warned20 = true;
-          } else if (elapsed >= 30 && !this.activeTimers[site].warned30) {
-            this.sendWarningNotification(site, 30);
-            this.activeTimers[site].warned30 = true;
+          if (elapsed >= 5 && !this.activeTimers[site].reminded) {
+            console.log('MindTapManager: Sending reminder for', site);
+            this.sendReminderNotification(site);
+            this.activeTimers[site].reminded = true;
+            setTimeout(() => {
+              if (this.activeTimers[site]) {
+                this.activeTimers[site].reminded = false;
+              }
+            }, 5 * 60 * 1000);
           }
-        }, 60000) // Check every minute
+        }, 60000)
       };
     }
     
@@ -189,20 +251,17 @@ class MindTapManager {
         clearTimeout(this.activeTimers[site].timeout);
         clearInterval(this.activeTimers[site].interval);
         delete this.activeTimers[site];
+        console.log('MindTapManager: Timer cleared for', site);
       }
     }
     
     triggerTimerCompletion(site, siteData) {
-      // Create notification
-      const message = siteData.purpose === 'work'
-        ? `Time's up! You said this was for work on ${site}. You sure? 😅`
-        : `Hey, you! Ready to get back to your grind or what? 🚀`;
-      
+      console.log('MindTapManager: Triggering timer completion for', site);
       chrome.notifications.create({
         type: 'basic',
-        iconUrl: 'icons/icon128.png',
+        iconUrl: 'icons/icon16.png',
         title: 'MindTap Nudge',
-        message,
+        message: 'Break time is done. You’ve got this—let’s focus again!',
         buttons: [
           { title: 'Open MindTap' },
           { title: 'Snooze 5 min' }
@@ -210,7 +269,6 @@ class MindTapManager {
         priority: 2
       });
       
-      // Log completion
       chrome.storage.local.get('mindtap_logs', (data) => {
         const logs = data.mindtap_logs || [];
         logs.push({
@@ -222,14 +280,12 @@ class MindTapManager {
         chrome.storage.local.set({ mindtap_logs: logs });
       });
       
-      // Remove from storage
       chrome.storage.local.get('mindtap', (data) => {
         const mindtapData = data.mindtap || {};
         delete mindtapData[site];
         chrome.storage.local.set({ mindtap: mindtapData });
       });
       
-      // Trigger popup in all tabs for this site
       chrome.tabs.query({ url: `*://${site}/*` }, (tabs) => {
         tabs.forEach(tab => {
           chrome.tabs.sendMessage(tab.id, { 
@@ -239,28 +295,22 @@ class MindTapManager {
         });
       });
       
-      // Clear timer
       this.clearTimer(site);
     }
     
-    sendWarningNotification(site, mins) {
-      const messages = {
-        20: `You've been on ${site} for 20 mins. Time to wrap up? ⏳`,
-        30: `30 mins on ${site}! Your future self will thank you for focusing. 💪`
-      };
-      
+    sendReminderNotification(site) {
+      console.log('MindTapManager: Sending reminder notification for', site);
       chrome.notifications.create({
         type: 'basic',
-        iconUrl: 'icons/icon128.png',
+        iconUrl: 'icons/icon16.png',
         title: 'MindTap Reminder',
-        message: messages[mins],
+        message: 'Break time is done. You’ve got this—let’s focus again!',
         buttons: [
           { title: 'Open MindTap' },
           { title: 'Snooze 5 min' }
         ]
       });
     }
-  }
-  
-  // Initialize
-  const mindTapManager = new MindTapManager();
+}
+
+const mindTapManager = new MindTapManager();

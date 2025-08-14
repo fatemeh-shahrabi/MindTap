@@ -5,60 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MindTap - Stay Focused</title>
   <link rel="stylesheet" href="popup.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap" rel="stylesheet" />
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>MindTap Control</h1>
-      <div class="avatar" id="userAvatar">👾</div>
+      <img src="../icons/the main logo.png" alt="MindTap Logo" class="mindtap-logo">
     </div>
     
-    <div id="timerDisplay" class="timer-display hidden">
-      <div class="progress-ring">
+    <div id="welcomeSection" class="section">
+      <p class="prompt-text">
+        You’re here! Hi there!<br>
+        Can I ask what brings you here today?<br>
+        Be honest—I promise I won’t tell anyone.
+      </p>
+      <div class="purpose-selector">
+        <img src="../icons/just for fun button.png" alt="Fun Button" class="purpose-btn" data-purpose="fun">
+        <img src="../icons/work or study button.png" alt="Work Button" class="purpose-btn" data-purpose="work">
+      </div>
+    </div>
+    
+    <div id="workSection" class="section hidden">
+      <p class="prompt-text">
+        Okay! No reminders then.<br>
+        Take care!
+      </p>
+      <img src="../icons/if study or work cat.png" alt="Close Button" class="close-btn">
+    </div>
+    
+    <div id="funSection" class="section hidden">
+      <p class="prompt-text">
+        Nice—you deserve it!<br>
+        Just don’t let it steal your focus.<br>
+        I can remind you—after how many minutes?
+      </p>
+      <div class="timer-input">
+        <div class="timer-circle">
+          <input type="number" id="customMinutes" min="1" max="120" placeholder="5">
+        </div>
+        <img src="../icons/next button.png" alt="Submit Button" class="submit-btn">
+      </div>
+    </div>
+    
+    <div id="timerSection" class="section hidden">
+      <div class="timer-circle">
         <svg viewBox="0 0 100 100">
-          <circle class="progress-ring__circle" stroke="#f472b6" stroke-width="8" fill="transparent" r="40" cx="50" cy="50"/>
+          <circle class="progress-ring__circle" stroke="#22c55e" stroke-width="8" fill="white" r="40" cx="50" cy="50"/>
         </svg>
         <span id="countdown">0:00</span>
       </div>
-      <button id="stopTimer" class="btn btn-warning">Stop Timer</button>
-    </div>
-    
-    <div id="promptSection" class="prompt-section">
-      <div class="purpose-selector">
-        <button class="purpose-btn" data-purpose="work">
-          <span>💼</span>
-          <span>Work Mode</span>
-        </button>
-        <button class="purpose-btn" data-purpose="fun">
-          <span>🎮</span>
-          <span>Fun Mode</span>
-        </button>
-      </div>
-      
-      <div id="timeSelection" class="time-selection hidden">
-        <div class="time-options">
-          <button class="time-option" data-minutes="5">5 min</button>
-          <button class="time-option" data-minutes="15">15 min</button>
-          <button class="time-option" data-minutes="30">30 min</button>
-        </div>
-        <div class="custom-time">
-          <input type="number" id="customMinutes" min="1" max="120" placeholder="Custom" />
-          <span>minutes</span>
-        </div>
-      </div>
-      
-      <div class="action-buttons">
-        <button id="startTimer" class="btn btn-primary">Let's Focus! 🚀</button>
-        <button id="snoozeTimer" class="btn btn-secondary hidden">Snooze 5 min ⏳</button>
-      </div>
-    </div>
-    
-    <div id="successAnimation" class="success-animation">
-      <div class="confetti"></div>
-      <div class="confetti"></div>
-      <div class="confetti"></div>
-      <div class="message">Timer Set! 🎉</div>
+      <img src="../icons/stop button.png" alt="Pause Button" class="pause-btn">
     </div>
   </div>
   <script src="popup.js"></script>

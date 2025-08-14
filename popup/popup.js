@@ -1,74 +1,53 @@
 document.addEventListener("DOMContentLoaded", () => {
-    // DOM Elements
+    const welcomeSection = document.getElementById('welcomeSection');
+    const workSection = document.getElementById('workSection');
+    const funSection = document.getElementById('funSection');
+    const timerSection = document.getElementById('timerSection');
     const purposeBtns = document.querySelectorAll('.purpose-btn');
-    const timeOptions = document.querySelectorAll('.time-option');
     const customMinutesInput = document.getElementById('customMinutes');
-    const startTimerBtn = document.getElementById('startTimer');
-    const stopTimerBtn = document.getElementById('stopTimer');
-    const snoozeTimerBtn = document.getElementById('snoozeTimer');
-    const timerDisplay = document.getElementById('timerDisplay');
-    const promptSection = document.getElementById('promptSection');
-    const timeSelection = document.getElementById('timeSelection');
-    const successAnimation = document.getElementById('successAnimation');
-    const progressCircle = document.querySelector('.progress-ring__circle');
+    const submitBtn = document.querySelector('.submit-btn');
+    const closeBtn = document.querySelector('.close-btn');
+    const pauseBtn = document.querySelector('.pause-btn');
     const countdownDisplay = document.getElementById('countdown');
+    const progressCircle = document.querySelector('.progress-ring__circle');
     
-    // State
     let selectedPurpose = null;
     let selectedMinutes = null;
     let currentTimer = null;
     
-    // Initialize
     initProgressRing();
     checkActiveTimer();
     
-    // Event Listeners
     purposeBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         selectedPurpose = btn.dataset.purpose;
-        purposeBtns.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        
-        timeSelection.classList.remove('hidden');
-        
-        // Default time selection based on purpose
+        welcomeSection.classList.add('hidden');
         if (selectedPurpose === 'work') {
-          selectTimeOption(15);
+          workSection.classList.remove('hidden');
         } else {
-          selectTimeOption(5);
+          funSection.classList.remove('hidden');
         }
       });
     });
     
-    timeOptions.forEach(option => {
-      option.addEventListener('click', () => {
-        selectTimeOption(parseInt(option.dataset.minutes));
-      });
+    closeBtn.addEventListener('click', () => {
+      window.close();
     });
     
     customMinutesInput.addEventListener('input', () => {
       if (customMinutesInput.value) {
-        selectTimeOption(parseInt(customMinutesInput.value));
+        selectedMinutes = parseInt(customMinutesInput.value);
       }
     });
     
-    startTimerBtn.addEventListener('click', startTimer);
-    stopTimerBtn.addEventListener('click', stopTimer);
-    snoozeTimerBtn.addEventListener('click', snoozeTimer);
+    submitBtn.addEventListener('click', startTimer);
+    pauseBtn.addEventListener('click', stopTimer);
     
-    // Functions
     function initProgressRing() {
       const radius = progressCircle.r.baseVal.value;
       const circumference = 2 * Math.PI * radius;
       progressCircle.style.strokeDasharray = `${circumference} ${circumference}`;
       progressCircle.style.strokeDashoffset = circumference;
-    }
-    
-    function selectTimeOption(minutes) {
-      timeOptions.forEach(opt => {
-        opt.classList.toggle('active', parseInt(opt.dataset.minutes) === minutes);
-      });
-      selectedMinutes = minutes;
     }
     
     function checkActiveTimer() {
@@ -80,9 +59,9 @@ document.addEventListener("DOMContentLoaded", () => {
           const siteData = data.mindtap?.[site] || {};
           
           if (siteData.startTime && Date.now() - siteData.startTime <= siteData.mins * 60 * 1000) {
-            // Show active timer
-            promptSection.classList.add('hidden');
-            timerDisplay.classList.remove('hidden');
+            welcomeSection.classList.add('hidden');
+            funSection.classList.add('hidden');
+            timerSection.classList.remove('hidden');
             startCountdown(siteData.startTime, siteData.mins * 60 * 1000);
           }
         });
@@ -98,30 +77,27 @@ document.addEventListener("DOMContentLoaded", () => {
         
         if (remaining <= 0) {
           clearInterval(currentTimer);
-          timerDisplay.classList.add('hidden');
-          promptSection.classList.remove('hidden');
+          timerSection.classList.add('hidden');
+          welcomeSection.classList.remove('hidden');
           return;
         }
         
-        // Update display
         const minutes = Math.floor(remaining / 60000);
         const seconds = Math.floor((remaining % 60000) / 1000);
         countdownDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
         
-        // Update progress ring
         const radius = progressCircle.r.baseVal.value;
         const circumference = 2 * Math.PI * radius;
         const offset = circumference - (elapsed / duration) * circumference;
         progressCircle.style.strokeDashoffset = offset;
         
-        // Change color based on remaining time
         const percentage = remaining / duration;
         if (percentage > 0.5) {
-          progressCircle.style.stroke = '#22c55e'; // Green
+          progressCircle.style.stroke = '#22c55e';
         } else if (percentage > 0.2) {
-          progressCircle.style.stroke = '#f59e0b'; // Orange
+          progressCircle.style.stroke = '#f59e0b';
         } else {
-          progressCircle.style.stroke = '#ef4444'; // Red
+          progressCircle.style.stroke = '#ef4444';
         }
       };
       
@@ -149,7 +125,6 @@ document.addEventListener("DOMContentLoaded", () => {
           const mindtapData = data.mindtap || {};
           mindtapData[site] = timerData;
           
-          // Award points for work mode
           const points = data.mindtap_points || 0;
           const newPoints = selectedPurpose === 'work' ? points + selectedMinutes : points;
           
@@ -157,14 +132,17 @@ document.addEventListener("DOMContentLoaded", () => {
             mindtap: mindtapData,
             mindtap_points: newPoints
           }, () => {
-            showSuccessAnimation();
+            chrome.notifications.create({
+              type: 'basic',
+              iconUrl: '../icons/the main logo.png',
+              title: 'MindTap',
+              message: 'Have fun! I’ll remind you when it’s time.'
+            });
             
-            // Switch to timer display
-            promptSection.classList.add('hidden');
-            timerDisplay.classList.remove('hidden');
+            funSection.classList.add('hidden');
+            timerSection.classList.remove('hidden');
             startCountdown(timerData.startTime, timerData.mins * 60 * 1000);
             
-            // Close popup after delay
             setTimeout(() => window.close(), 1500);
           });
         });
@@ -182,37 +160,10 @@ document.addEventListener("DOMContentLoaded", () => {
           
           chrome.storage.local.set({mindtap: mindtapData}, () => {
             clearInterval(currentTimer);
-            timerDisplay.classList.add('hidden');
-            promptSection.classList.remove('hidden');
+            timerSection.classList.add('hidden');
+            welcomeSection.classList.remove('hidden');
           });
         });
       });
     }
-    
-    function snoozeTimer() {
-      chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-        if (!tabs[0]) return;
-        
-        const site = new URL(tabs[0].url).hostname;
-        chrome.storage.local.get('mindtap', (data) => {
-          const mindtapData = data.mindtap || {};
-          if (mindtapData[site]) {
-            mindtapData[site].mins += 5;
-            mindtapData[site].startTime = Date.now();
-            
-            chrome.storage.local.set({mindtap: mindtapData}, () => {
-              startCountdown(mindtapData[site].startTime, mindtapData[site].mins * 60 * 1000);
-              showSuccessAnimation();
-            });
-          }
-        });
-      });
-    }
-    
-    function showSuccessAnimation() {
-      successAnimation.classList.add('active');
-      setTimeout(() => {
-        successAnimation.classList.remove('active');
-      }, 2000);
-    }
-  });
+});

@@ -4,165 +4,111 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MindTap - Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap" rel="stylesheet" />
   <style>
     body {
       width: 400px;
-      min-height: 500px;
+      height: 400px;
       margin: 0;
       padding: 20px;
-      font-family: 'Poppins', sans-serif;
-      background: #0f172a;
-      color: #e2e8f0;
+      font-family: 'Courier Prime', monospace;
+      background: #ededed;
+      color: #333;
+      border-radius: 36px;
       overflow-y: auto;
     }
 
     .container {
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 20px;
     }
 
     .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      text-align: center;
+    }
+
+    .mindtap-logo {
+      width: 269px;
+      height: 48.7px;
       margin-bottom: 10px;
     }
 
-    h1 {
-      font-size: 22px;
-      font-weight: 600;
-      color: #f472b6;
-      margin: 0;
-    }
-
-    .avatar {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: #1e293b;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      cursor: pointer;
-      transition: transform 0.2s;
-    }
-
-    .avatar:hover {
-      transform: scale(1.1);
+    .stats-section {
+      font-size: 10.4px;
+      text-align: center;
     }
 
     .site-list {
       display: flex;
       flex-direction: column;
       gap: 10px;
+      width: 100%;
     }
 
     .site-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #1e293b;
+      background: #fff;
       padding: 10px;
       border-radius: 8px;
-      transition: all 0.2s;
-    }
-
-    .site-item:hover {
-      background: #334155;
     }
 
     .site-item span {
-      font-size: 14px;
+      font-size: 10.4px;
     }
 
     .site-item button {
       background: #ef4444;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       padding: 6px 12px;
-      color: white;
-      font-family: 'Poppins', sans-serif;
+      color: #333;
+      font-family: 'Courier Prime', monospace;
+      font-size: 10.4px;
       cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .site-item button:hover {
-      background: #dc2626;
     }
 
     .add-site {
       display: flex;
       gap: 10px;
-      margin-top: 15px;
+      width: 100%;
     }
 
     .add-site input {
       flex: 1;
-      background: #1e293b;
-      border: 1px solid #334155;
+      background: #fff;
+      border: 1px solid #ccc;
       border-radius: 8px;
-      padding: 8px 12px;
-      color: white;
-      font-family: 'Poppins', sans-serif;
+      padding: 8px;
+      font-family: 'Courier Prime', monospace;
+      font-size: 10.4px;
+      color: #333;
     }
 
     .add-site button {
-      background: #f472b6;
+      background: #22c55e;
       border: none;
       border-radius: 8px;
       padding: 8px 12px;
-      color: #0f172a;
-      font-family: 'Poppins', sans-serif;
-      font-weight: 500;
+      color: #333;
+      font-family: 'Courier Prime', monospace;
+      font-size: 10.4px;
       cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .add-site button:hover {
-      background: #ec4899;
-      transform: translateY(-1px);
-    }
-
-    .stats-section {
-      background: #1e293b;
-      padding: 15px;
-      border-radius: 8px;
-    }
-
-    .stats-section h2 {
-      font-size: 16px;
-      color: #f472b6;
-      margin: 0 0 10px;
-    }
-
-    .stats-section p {
-      font-size: 14px;
-      margin: 5px 0;
     }
 
     .btn {
-      padding: 12px 20px;
+      background: #22c55e;
       border: none;
-      border-radius: 10px;
-      font-family: 'Poppins', sans-serif;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
+      border-radius: 8px;
+      padding: 10px;
       width: 100%;
-      margin-top: 10px;
-    }
-
-    .btn-primary {
-      background: #f472b6;
-      color: #0f172a;
-    }
-
-    .btn-primary:hover {
-      background: #ec4899;
-      transform: translateY(-2px);
+      font-family: 'Courier Prime', monospace;
+      font-size: 10.4px;
+      color: #333;
+      cursor: pointer;
     }
 
     .hidden {
@@ -173,19 +119,16 @@
 <body>
   <div class="container">
     <div class="header">
-      <h1>MindTap Dashboard</h1>
-      <div class="avatar" id="userAvatar">👾</div>
+      <img src="../icons/the main logo.png" alt="MindTap Logo" class="mindtap-logo">
     </div>
 
     <div class="stats-section">
-      <h2>Your Stats</h2>
       <p>Total Focus Time: <span id="totalFocusTime">0 minutes</span></p>
       <p>Points Earned: <span id="totalPoints">0</span></p>
     </div>
 
     <div class="site-list" id="siteList">
-      <h2>Your Sites</h2>
-      <!-- Dynamically populated -->
+      <p>Your Sites</p>
     </div>
 
     <div class="add-site">
@@ -193,7 +136,7 @@
       <button id="addSiteBtn">Add</button>
     </div>
 
-    <button class="btn btn-primary" id="saveChanges">Save Changes</button>
+    <button class="btn" id="saveChanges">Save Changes</button>
   </div>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
@@ -204,7 +147,6 @@
       const totalFocusTime = document.getElementById("totalFocusTime");
       const totalPoints = document.getElementById("totalPoints");
 
-      // Load existing sites and stats
       function loadDashboard() {
         chrome.storage.local.get(["mindtap_sites", "mindtap_logs", "mindtap_points"], (data) => {
           const sites = data.mindtap_sites || [
@@ -220,13 +162,11 @@
           const logs = data.mindtap_logs || [];
           const points = data.mindtap_points || 0;
 
-          // Update stats
           const totalMins = logs.reduce((sum, log) => sum + log.mins, 0);
           totalFocusTime.textContent = `${totalMins} minutes`;
           totalPoints.textContent = points;
 
-          // Populate site list
-          siteList.innerHTML = "<h2>Your Sites</h2>";
+          siteList.innerHTML = "<p>Your Sites</p>";
           sites.forEach((site) => {
             const siteItem = document.createElement("div");
             siteItem.className = "site-item";
@@ -237,7 +177,6 @@
             siteList.appendChild(siteItem);
           });
 
-          // Add remove event listeners
           document.querySelectorAll(".site-item button").forEach((btn) => {
             btn.addEventListener("click", () => {
               const site = btn.dataset.site;
@@ -248,7 +187,6 @@
         });
       }
 
-      // Add new site
       addSiteBtn.addEventListener("click", () => {
         const newSite = newSiteInput.value.trim();
         if (!newSite || !/^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}$/.test(newSite)) {
@@ -268,7 +206,6 @@
         });
       });
 
-      // Save changes and update manifest
       saveChangesBtn.addEventListener("click", () => {
         chrome.storage.local.get("mindtap_sites", (data) => {
           const sites = data.mindtap_sites || [];
@@ -281,7 +218,6 @@
         });
       });
 
-      // Initial load
       loadDashboard();
     });
   </script>
